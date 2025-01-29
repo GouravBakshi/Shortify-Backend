@@ -1,10 +1,13 @@
 package com.url.shortener.security.jwt;
 
 import com.url.shortener.service.UserDetailsImpl;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -71,10 +74,14 @@ public class JwtUtils {
             Jwts.parser().verifyWith((SecretKey) key())
                     .build().parseSignedClaims(authToken);
             return true;
-        } catch (JwtException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
+        } catch (ExpiredJwtException e) {
+            throw new ExpiredJwtException(null, null, "JWT token has expired", e);
+        } catch (MalformedJwtException e) {
+            throw new MalformedJwtException("Malformed JWT token", e);
+        } catch (SignatureException e) {
+            throw new SignatureException("Invalid JWT signature", e);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new JwtException("JWT validation failed: " + e.getMessage(), e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
