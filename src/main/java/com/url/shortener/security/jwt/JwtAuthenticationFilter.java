@@ -29,6 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Value("${frontend.url}")
     private String frontend_Url;
 
+    //Setting the header
     private void setCorsHeaders(HttpServletResponse response) {
         response.setHeader("Access-Control-Allow-Origin", frontend_Url);
         response.setHeader("Access-Control-Allow-Credentials", "true");
