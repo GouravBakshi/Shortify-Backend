@@ -1,10 +1,13 @@
 package com.url.shortener.service;
 
 import com.url.shortener.dtos.LoginRequest;
+import com.url.shortener.exceptions.InvalidCredentialsException;
 import com.url.shortener.models.User;
+import com.url.shortener.repository.UrlMappingRepository;
 import com.url.shortener.repository.UserRepository;
 import com.url.shortener.security.jwt.JwtAuthenticationResponse;
 import com.url.shortener.security.jwt.JwtUtils;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,6 +27,8 @@ public class UserService {
     private AuthenticationManager authenticationManager;
     private JwtUtils jwtUtils;
 
+    private UrlMappingRepository urlMappingRepository;
+
 
     public boolean isUsernameTaken(String username) {
         Optional<User> user = userRepository.findByUsername(username);
@@ -41,13 +46,20 @@ public class UserService {
     }
 
     public JwtAuthenticationResponse authenticateUser(LoginRequest loginRequest){
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(),
-                        loginRequest.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        String jwt = jwtUtils.generateToken(userDetails);
-        return new JwtAuthenticationResponse(jwt);
+
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(),
+                            loginRequest.getPassword()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            String jwt = jwtUtils.generateToken(userDetails);
+            return new JwtAuthenticationResponse(jwt);
+        }
+        catch (Exception e)
+        {
+            throw new InvalidCredentialsException("Invalid username or password");
+        }
     }
 
     public User findByUsername(String name) {
@@ -55,4 +67,12 @@ public class UserService {
                 ()-> new UsernameNotFoundException("User not found with username: " + name)
         );
     }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+        urlMappingRepository.deleteByUserId(userId);
+
+        userRepository.deleteById(userId);
+    }
+
 }

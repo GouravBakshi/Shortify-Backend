@@ -57,6 +57,8 @@ public class WebSecurityConfig {
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/urls/**").authenticated()
+                        .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/forgotPassword/**").permitAll()
                         .requestMatchers("/{shortUrl}").permitAll()
                         .anyRequest().authenticated()
                 );
