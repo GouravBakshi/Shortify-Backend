@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.Instant;
 import java.util.Date;
@@ -51,12 +50,50 @@ public class ForgotPasswordController {
         // Generate OTP
         int otp = otpGenerator();
 
-        // Prepare mail body with OTP
-        MailBody mailBody = MailBody.builder()
-                .to(email)
-                .subject("OTP for Forgot Password request")
-                .text("This is the OTP for your Forgot Password Request: " + otp)
-                .build();
+        String htmlContent = "<!DOCTYPE html>" +
+                "<html lang=\"en\">" +
+                "<head>" +
+                "  <meta charset=\"UTF-8\">" +
+                "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                "  <title>Password Reset OTP</title>" +
+                "  <style>" +
+                "    body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; padding: 20px; margin: 0; }" +
+                "    .container { background-color: #fff; border-radius: 8px; padding: 20px; max-width: 600px; margin: 20px auto; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }" +
+                "    h2 { color: #4CAF50; }" +
+                "    .otp-box { background-color: #e8f5e9; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 5px; margin: 20px 0; text-align: center; }" +
+                "    .footer { font-size: 14px; color: #888; text-align: center; margin-top: 20px; }" +
+                "    .footer a { color: #4CAF50; text-decoration: none; }" +
+                "    .header { background-color: #3B82F6; color: white; padding: 10px; text-align: center; font-size: 24px; font-weight: bold; border-radius: 8px 8px 0 0; }" +
+                "  </style>" +
+                "</head>" +
+                "<body>" +
+                "  <div class=\"header\">Shortify</div>" +
+                "  <div class=\"container\">" +
+                "    <h2>Password Reset Request</h2>" +
+                "    <p>Hello <strong>" + user.getUsername() + "</strong>,</p>" +
+                "    <p>We received a request to reset your password. Please use the following One-Time Password (OTP) to complete the process:</p>" +
+                "    <div class=\"otp-box\">" + otp + "</div>" +
+                "    <p>This OTP is valid for the next 3 minutes. After that, it will expire and you will need to request a new OTP.</p>" +
+                "    <p>If you did not request a password reset, please ignore this email, and your account will remain secure.</p>" +
+                "    <p><strong>Do not reply to this email.</strong> This is an automated message.</p>" +
+                "    <div class=\"footer\">" +
+                "      <p>Thank you for using Shortify!</p>" +
+                "    </div>" +
+                "  </div>" +
+                "</body>" +
+                "</html>";
+
+        String textContent = "Shortify - Forgot Password Request\n\n" +
+                "Hello " + user.getUsername() + ",\n\n" +
+                "We received a request to reset your password. Please use the following One-Time Password (OTP) to complete the process:\n\n" +
+                "OTP: " + otp + "\n\n" +
+                "This OTP is valid for the next 3 minutes. After that, it will expire and you will need to request a new OTP.\n\n" +
+                "If you did not request a password reset, please ignore this email, and your account will remain secure.\n\n" +
+                "Do not reply to this email. This is an automated message.\n\n" +
+                "Thank you for using Shortify!";
+
+
+
 
         // Create ForgotPassword entity and associate it with the user
         ForgotPassword fp = ForgotPassword.builder()
@@ -66,8 +103,16 @@ public class ForgotPasswordController {
                 .verified(false)
                 .build();
 
+        // Prepare mail body with OTP
+        MailBody mailBody = MailBody.builder()
+                .to(email)
+                .subject("OTP for Forgot Password request")
+                .text(textContent)
+                .html(htmlContent)
+                .build();
+
         // Send OTP email
-        emailService.sendSimpleMessage(mailBody);
+        emailService.sendHtmlMessage(mailBody);
 
         // Save ForgotPassword entity
         forgotPasswordRepository.save(fp);
