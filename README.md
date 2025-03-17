@@ -42,7 +42,7 @@ cd Shortify-Backend
 ### Check out the live link here :
  - https://shfy.netlify.app
 
-### Fronted Link :
+### Frontend Link :
 - https://github.com/GouravBakshi/Shortify-Frontend
 
 
